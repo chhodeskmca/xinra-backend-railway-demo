@@ -1,35 +1,44 @@
-const app = require('./app');
-const prisma = require('./config/db');
+// env.js must be the first import — it loads dotenv before anything else
 const { env } = require('./config/env');
 
+const app = require('./app');
+const prisma = require('./config/db');
+
+// Confirm which DB URL is active at startup
+console.log(`[startup] NODE_ENV     : ${env.nodeEnv}`);
+console.log(`[startup] PORT         : ${env.port}`);
+console.log(`[startup] DATABASE_URL : ${process.env.DATABASE_URL}...`);
+
 const server = app.listen(env.port, () => {
-  console.log(`Server running on port ${env.port}`);
-  console.log('DB URL:', process.env.DATABASE_URL);
+  console.log(`[startup] Server running on port ${env.port}`);
 });
 
 async function shutdown(signal) {
-  console.log(`${signal} received. Shutting down server...`);
+  console.log(`[shutdown] ${signal} received. Shutting down gracefully...`);
 
   server.close(async () => {
+    console.log('[shutdown] HTTP server closed');
     await prisma.$disconnect();
+    console.log('[shutdown] Database disconnected');
     process.exit(0);
   });
 
+  // Force exit if graceful shutdown takes too long
   setTimeout(() => {
-    console.error('Forced shutdown after timeout');
+    console.error('[shutdown] Forced exit after timeout');
     process.exit(1);
   }, 10000).unref();
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
 
 process.on('unhandledRejection', (error) => {
-  console.error('Unhandled promise rejection:', error);
+  console.error('[error] Unhandled promise rejection:', error);
   shutdown('unhandledRejection');
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
+  console.error('[error] Uncaught exception:', error);
   shutdown('uncaughtException');
 });
