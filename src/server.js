@@ -7,7 +7,7 @@ const prisma = require('./config/db');
 // Confirm which DB URL is active at startup
 console.log(`[startup] NODE_ENV     : ${env.nodeEnv}`);
 console.log(`[startup] PORT         : ${env.port}`);
-console.log(`[startup] DATABASE_URL : ${process.env.DB_URL}...`);
+console.log(`[startup] DB_URL : ${process.env.DB_URL}...`);
 
 const server = app.listen(env.port, () => {
   console.log(`[startup] Server running on port ${env.port}`);
