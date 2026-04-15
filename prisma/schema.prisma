@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String       @id @default(uuid())
+  name                  String
+  email                 String       @unique
+  password              String
+  role                  Role
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  createdVenues         Venue[]      @relation("VenueCreatedBy")
+  staffVenueAssignments StaffVenue[] @relation("StaffVenueStaff")
+  assignedStaffVenues   StaffVenue[] @relation("StaffVenueAssignedBy")
+  venueAdminAssignments VenueAdmin[] @relation("VenueAdminAdmin")
+  assignedVenueAdmins   VenueAdmin[] @relation("VenueAdminAssignedBy")
+
+  @@index([role])
+  @@map("users")
+}
+
+model Venue {
+  id                       String       @id @default(uuid())
+  name                     String
+  address                  String?
+  email                    String?
+  telephoneNumber          String?      @map("telephone_number")
+  stripeAccountId          String?      @map("stripe_account_id")
+  australianBusinessNumber String?      @map("australian_business_number")
+  qrToken                  String       @unique @map("qr_token")
+  createdById              String       @map("created_by_id")
+  createdBy                User         @relation("VenueCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  staffAssignments         StaffVenue[]
+  adminAssignments         VenueAdmin[]
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  @@index([createdById])
+  @@map("venues")
+}
+
+model StaffVenue {
+  id           String   @id @default(uuid())
+  staffId      String   @map("staff_id")
+  venueId      String   @map("venue_id")
+  assignedById String?  @map("assigned_by_id")
+  staff        User     @relation("StaffVenueStaff", fields: [staffId], references: [id], onDelete: Cascade)
+  venue        Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  assignedBy   User?    @relation("StaffVenueAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@unique([staffId, venueId])
+  @@index([staffId])
+  @@index([venueId])
+  @@index([assignedById])
+  @@map("staff_venues")
+}
+
+model VenueAdmin {
+  id           String   @id @default(uuid())
+  venueId      String   @map("venue_id")
+  adminId      String   @map("admin_id")
+  assignedById String?  @map("assigned_by_id")
+  venue        Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  admin        User     @relation("VenueAdminAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  assignedBy   User?    @relation("VenueAdminAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([venueId, adminId])
+  @@index([venueId])
+  @@index([adminId])
+  @@index([assignedById])
+  @@map("venue_admins")
+}
+
+enum Role {
+  ADMIN
+  VENUE_ADMIN
+  STAFF
+}
