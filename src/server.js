@@ -4,6 +4,7 @@ const { env } = require('./config/env');
 
 const server = app.listen(env.port, () => {
   console.log(`Server running on port ${env.port}`);
+  console.log('DB URL:', process.env.DATABASE_URL?.substring(0, 40));
 });
 
 async function shutdown(signal) {
