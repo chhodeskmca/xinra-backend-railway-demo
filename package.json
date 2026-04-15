@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "check": "find src prisma -name '*.js' -print0 | xargs -0 -n1 node --check",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "prisma": "^6.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
