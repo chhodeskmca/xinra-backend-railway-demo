@@ -24,7 +24,7 @@ function getNumberEnv(name, defaultValue) {
 }
 
 // Validate all required variables at startup
-const requiredVars = ['DATABASE_URL', 'JWT_SECRET'];
+const requiredVars = ['DB_URL', 'JWT_SECRET'];
 for (const varName of requiredVars) {
   getRequiredEnv(varName);
 }
