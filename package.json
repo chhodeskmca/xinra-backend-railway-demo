@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && prisma migrate deploy && node prisma/seed.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "check": "find src prisma -name '*.js' -print0 | xargs -0 -n1 node --check",
