@@ -29,10 +29,11 @@ const openApiDocument = {
   info: {
     title: 'Xinra Backend API',
     version: '1.0.0',
-    description: 'Authentication, venue creation, QR venue lookup, and role-based user management APIs.'
+    description: 'Authentication, venue creation, QR venue lookup, tip/review submission, and role-based user management APIs.'
   },
   tags: [
     { name: 'Auth' },
+    { name: 'Tip Reviews' },
     { name: 'Users' },
     { name: 'Staff' },
     { name: 'Venues' }
@@ -70,6 +71,7 @@ const openApiDocument = {
           id: { type: 'string', format: 'uuid' },
           name: { type: 'string' },
           email: { type: 'string', format: 'email' },
+          stripe_account_id: { type: 'string', nullable: true, example: 'acct_1ExampleStaffStripe' },
           role: {
             type: 'string',
             enum: ['ADMIN', 'VENUE_ADMIN', 'STAFF']
@@ -134,8 +136,7 @@ const openApiDocument = {
         type: 'object',
         properties: {
           id: { type: 'string', format: 'uuid' },
-          name: { type: 'string', example: 'Staff User' },
-          email: { type: 'string', format: 'email', example: 'staff@example.com' }
+          name: { type: 'string', example: 'Staff User' }
         }
       },
       PublicVenueDetails: {
@@ -184,6 +185,87 @@ const openApiDocument = {
             }
           }
         ]
+      },
+      TipTransaction: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          venue_id: { type: 'string', format: 'uuid' },
+          staff_id: { type: 'string', format: 'uuid' },
+          total_amount: { type: 'number', format: 'float', example: 20.0 },
+          platform_fee: { type: 'integer', example: 3 },
+          platform_earn_amount: { type: 'number', format: 'float', example: 0.6 },
+          staff_earn_amount: { type: 'number', format: 'float', example: 19.4 },
+          currency: { type: 'string', example: 'AUD' },
+          status: {
+            type: 'string',
+            enum: ['RECORDED', 'PENDING_PAYMENT', 'SUCCEEDED', 'FAILED', 'CANCELED'],
+            example: 'RECORDED'
+          },
+          stripe_payment_intent_id: {
+            type: 'string',
+            nullable: true,
+            example: null
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      StaffReview: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          venue_id: { type: 'string', format: 'uuid' },
+          staff_id: { type: 'string', format: 'uuid' },
+          tip_id: { type: 'string', format: 'uuid', nullable: true },
+          rating: { type: 'integer', minimum: 1, maximum: 5, example: 5 },
+          comment: { type: 'string', nullable: true, example: 'Excellent service' },
+          status: {
+            type: 'string',
+            enum: ['ACTIVE', 'PENDING_PAYMENT', 'CANCELED'],
+            example: 'ACTIVE'
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      TipReviewVenueSummary: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string', example: 'Xinra Cafe' }
+        }
+      },
+      TipReviewStaffSummary: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string', example: 'John' }
+        }
+      },
+      TipReviewSubmission: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['TIP_ONLY', 'REVIEW_ONLY', 'TIP_AND_REVIEW'],
+            example: 'TIP_AND_REVIEW'
+          },
+          venue: { $ref: '#/components/schemas/TipReviewVenueSummary' },
+          staff: { $ref: '#/components/schemas/TipReviewStaffSummary' },
+          tip_transaction: {
+            allOf: [
+              { $ref: '#/components/schemas/TipTransaction' }
+            ],
+            nullable: true
+          },
+          review: {
+            allOf: [
+              { $ref: '#/components/schemas/StaffReview' }
+            ],
+            nullable: true
+          }
+        }
       },
       LoginRequest: {
         type: 'object',
@@ -237,6 +319,7 @@ const openApiDocument = {
           name: { type: 'string', example: 'Staff User' },
           email: { type: 'string', format: 'email', example: 'staff@example.com' },
           password: { type: 'string', format: 'password', example: 'ChangeMe123!' },
+          stripe_account_id: { type: 'string', nullable: true, example: 'acct_1ExampleStaffStripe' },
           venue_ids: {
             type: 'array',
             minItems: 1,
@@ -251,6 +334,7 @@ const openApiDocument = {
           name: { type: 'string', example: 'Updated Staff User' },
           email: { type: 'string', format: 'email', example: 'updated.staff@example.com' },
           password: { type: 'string', format: 'password', example: 'NewPassword123!' },
+          stripe_account_id: { type: 'string', nullable: true, example: 'acct_1ExampleStaffStripe' },
           venue_ids: {
             type: 'array',
             minItems: 1,
@@ -288,6 +372,41 @@ const openApiDocument = {
             ]
           }
         }
+      },
+      SubmitTipReviewRequest: {
+        type: 'object',
+        required: ['qr_token', 'staff_id'],
+        properties: {
+          qr_token: {
+            type: 'string',
+            example: '4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f'
+          },
+          staff_id: {
+            type: 'string',
+            format: 'uuid',
+            example: '82b60c1f-1e61-4389-bd7f-7e4fc604adbf'
+          },
+          tip_amount: {
+            type: 'number',
+            format: 'float',
+            nullable: true,
+            example: 20.0,
+            description: 'Optional. Provide for tip-only or tip+review submissions.'
+          },
+          rating: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 5,
+            nullable: true,
+            example: 5,
+            description: 'Optional, but required if comment is provided.'
+          },
+          comment: {
+            type: 'string',
+            nullable: true,
+            example: 'Very friendly service'
+          }
+        }
       }
     }
   },
@@ -321,6 +440,34 @@ const openApiDocument = {
           },
           400: { description: 'Validation failed' },
           401: { description: 'Invalid credentials' }
+        }
+      }
+    },
+    '/api/v1/tip-reviews': {
+      post: {
+        tags: ['Tip Reviews'],
+        summary: 'Submit a tip, review, or both for a staff member from a venue QR flow',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SubmitTipReviewRequest' }
+            }
+          }
+        },
+        responses: {
+          201: {
+            description: 'Tip/review submitted successfully',
+            content: {
+              'application/json': {
+                schema: successEnvelope({ $ref: '#/components/schemas/TipReviewSubmission' })
+              }
+            }
+          },
+          400: {
+            description: 'Validation failed, staff is not assigned to the venue, or neither tip_amount nor rating was provided'
+          },
+          404: { description: 'Venue not found for this QR token' }
         }
       }
     },

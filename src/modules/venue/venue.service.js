@@ -143,8 +143,7 @@ const VENUE_PUBLIC_SELECT = {
       staff: {
         select: {
           id: true,
-          name: true,
-          email: true
+          name: true
         }
       }
     },
@@ -199,7 +198,10 @@ function serializePublicVenueDetails(venue) {
     qr_scan_url: buildQrScanUrl(venue.qrToken),
     createdAt: venue.createdAt,
     updatedAt: venue.updatedAt,
-    staff: venue.staffAssignments.map(({ staff }) => staff)
+    staff: venue.staffAssignments.map(({ staff }) => ({
+      id: staff.id,
+      name: staff.name
+    }))
   };
 }
 

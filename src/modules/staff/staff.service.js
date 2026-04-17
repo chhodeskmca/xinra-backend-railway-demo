@@ -12,7 +12,7 @@ const {
   serializeVenue
 } = require('../../shared/utils/venueAccess');
 
-const STAFF_MUTABLE_FIELDS = ['name', 'email', 'password', 'venue_ids'];
+const STAFF_MUTABLE_FIELDS = ['name', 'email', 'password', 'stripe_account_id', 'venue_ids'];
 
 function emptyStringToUndefined(value) {
   if (typeof value === 'string' && value.trim() === '') {
@@ -62,6 +62,7 @@ const userCreateSchema = z.object({
 });
 
 const createStaffSchema = userCreateSchema.extend({
+  stripe_account_id: optionalString(255),
   venue_ids: venueIdsSchema
 });
 
@@ -69,6 +70,7 @@ const updateStaffSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters long').max(100).optional(),
   email: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
   password: passwordSchema.optional(),
+  stripe_account_id: optionalString(255),
   venue_ids: venueIdsSchema.optional()
 });
 
@@ -100,6 +102,7 @@ const STAFF_BASE_SELECT = {
   id: true,
   name: true,
   email: true,
+  stripeAccountId: true,
   role: true,
   createdAt: true,
   updatedAt: true
@@ -135,6 +138,7 @@ function serializeStaff(staff) {
     id: staff.id,
     name: staff.name,
     email: staff.email,
+    stripe_account_id: staff.stripeAccountId,
     role: staff.role,
     createdAt: staff.createdAt,
     updatedAt: staff.updatedAt,
@@ -321,6 +325,7 @@ async function createStaff(payload, actor) {
         name: input.name,
         email: input.email,
         password: hashedPassword,
+        stripeAccountId: input.stripe_account_id ?? null,
         role: ROLES.STAFF
       },
       select: {
@@ -421,6 +426,10 @@ async function updateStaff(staffId, payload, actor) {
 
     if (Object.prototype.hasOwnProperty.call(payload, 'password')) {
       data.password = await hashPassword(input.password);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'stripe_account_id')) {
+      data.stripeAccountId = input.stripe_account_id ?? null;
     }
 
     if (Object.keys(data).length) {

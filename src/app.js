@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const authRoutes = require('./modules/auth/auth.routes');
 const staffRoutes = require('./modules/staff/staff.routes');
+const tipReviewRoutes = require('./modules/tipReview/tipReview.routes');
 const userRoutes = require('./modules/user/user.routes');
 const venueRoutes = require('./modules/venue/venue.routes');
 const { swaggerUi, openApiDocument } = require('./docs/swagger');
@@ -35,6 +36,7 @@ const apiV1Router = express.Router();
 
 apiV1Router.use('/auth', authRoutes);
 apiV1Router.use('/staff', staffRoutes);
+apiV1Router.use('/tip-reviews', tipReviewRoutes);
 apiV1Router.use('/users', userRoutes);
 apiV1Router.use('/venues', venueRoutes);
 

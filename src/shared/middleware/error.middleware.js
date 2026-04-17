@@ -22,6 +22,14 @@ function normalizeError(error) {
     };
   }
 
+  if (error.code === 'P2003') {
+    return {
+      statusCode: HTTP_STATUS.CONFLICT,
+      message: 'This record cannot be changed because related records still exist',
+      errors: error.meta?.field_name || null
+    };
+  }
+
   if (error.isOperational) {
     return {
       statusCode: error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR,

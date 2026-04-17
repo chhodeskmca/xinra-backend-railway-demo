@@ -1,6 +1,6 @@
 # Xinra Backend
 
-Production-ready JavaScript backend for login-only auth, role-based user creation, standard API responses, and API docs.
+Production-ready JavaScript backend for login-only auth, role-based user creation, venue QR lookups, tip/review submission, standard API responses, and API docs.
 
 ## Setup
 
@@ -38,6 +38,7 @@ npm start
 ## Routes
 
 - `POST /api/v1/auth/login`
+- `POST /api/v1/tip-reviews`
 - `GET /api/v1/venues`
 - `POST /api/v1/venues`
 - `GET /api/v1/venues/qr/:qrToken`
@@ -56,3 +57,5 @@ npm start
 - `POST /api/v1/users/staff/:staffId/venues`
 - `GET /api-docs`
 - `GET /docs`
+
+Implementation notes for the TipReview flow live in [docs/tip-review-flow.md](docs/tip-review-flow.md).
