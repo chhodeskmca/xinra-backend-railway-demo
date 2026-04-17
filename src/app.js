@@ -2,6 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const authRoutes = require('./modules/auth/auth.routes');
+const statsRoutes = require('./modules/stats/stats.routes');
 const staffRoutes = require('./modules/staff/staff.routes');
 const tipReviewRoutes = require('./modules/tipReview/tipReview.routes');
 const userRoutes = require('./modules/user/user.routes');
@@ -35,6 +36,7 @@ app.get('/docs', scalarDocs(openApiDocument));
 const apiV1Router = express.Router();
 
 apiV1Router.use('/auth', authRoutes);
+apiV1Router.use('/stats', statsRoutes);
 apiV1Router.use('/staff', staffRoutes);
 apiV1Router.use('/tip-reviews', tipReviewRoutes);
 apiV1Router.use('/users', userRoutes);

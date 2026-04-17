@@ -1,6 +1,6 @@
 # Xinra Backend
 
-Production-ready JavaScript backend for login-only auth, role-based user creation, venue QR lookups, tip/review submission, standard API responses, and API docs.
+Production-ready JavaScript backend for login-only auth, role-based user creation, dashboard stats, venue QR lookups, tip/review submission, standard API responses, and API docs.
 
 ## Setup
 
@@ -38,6 +38,7 @@ npm start
 ## Routes
 
 - `POST /api/v1/auth/login`
+- `GET /api/v1/stats/dashboard`
 - `POST /api/v1/tip-reviews`
 - `GET /api/v1/venues`
 - `POST /api/v1/venues`

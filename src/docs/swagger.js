@@ -29,10 +29,11 @@ const openApiDocument = {
   info: {
     title: 'Xinra Backend API',
     version: '1.0.0',
-    description: 'Authentication, venue creation, QR venue lookup, tip/review submission, and role-based user management APIs.'
+    description: 'Authentication, dashboard stats, venue creation, QR venue lookup, tip/review submission, and role-based user management APIs.'
   },
   tags: [
     { name: 'Auth' },
+    { name: 'Stats' },
     { name: 'Tip Reviews' },
     { name: 'Users' },
     { name: 'Staff' },
@@ -227,6 +228,77 @@ const openApiDocument = {
           },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      DashboardMoneyValue: {
+        type: 'object',
+        properties: {
+          amount: { type: 'number', format: 'float', example: 30.0 },
+          currency: { type: 'string', example: 'AUD' }
+        }
+      },
+      AdminDashboardStatsSummary: {
+        type: 'object',
+        properties: {
+          total_venue_user_count: { type: 'integer', example: 12 },
+          total_staff_user_count: { type: 'integer', example: 48 },
+          total_venues: { type: 'integer', example: 9 }
+        }
+      },
+      VenueAdminDashboardStatsSummary: {
+        type: 'object',
+        properties: {
+          total_venue_count: { type: 'integer', example: 3 },
+          total_staff_count: { type: 'integer', example: 7 },
+          total_venue_earning: { $ref: '#/components/schemas/DashboardMoneyValue' }
+        }
+      },
+      StaffDashboardStatsSummary: {
+        type: 'object',
+        properties: {
+          total_earning: { $ref: '#/components/schemas/DashboardMoneyValue' },
+          rating_avg: {
+            type: 'number',
+            format: 'float',
+            nullable: true,
+            example: 4.67
+          }
+        }
+      },
+      AdminDashboardStats: {
+        type: 'object',
+        properties: {
+          role: {
+            type: 'string',
+            enum: ['ADMIN'],
+            example: 'ADMIN'
+          },
+          generated_at: { type: 'string', format: 'date-time' },
+          summary: { $ref: '#/components/schemas/AdminDashboardStatsSummary' }
+        }
+      },
+      VenueAdminDashboardStats: {
+        type: 'object',
+        properties: {
+          role: {
+            type: 'string',
+            enum: ['VENUE_ADMIN'],
+            example: 'VENUE_ADMIN'
+          },
+          generated_at: { type: 'string', format: 'date-time' },
+          summary: { $ref: '#/components/schemas/VenueAdminDashboardStatsSummary' }
+        }
+      },
+      StaffDashboardStats: {
+        type: 'object',
+        properties: {
+          role: {
+            type: 'string',
+            enum: ['STAFF'],
+            example: 'STAFF'
+          },
+          generated_at: { type: 'string', format: 'date-time' },
+          summary: { $ref: '#/components/schemas/StaffDashboardStatsSummary' }
         }
       },
       TipReviewVenueSummary: {
@@ -440,6 +512,31 @@ const openApiDocument = {
           },
           400: { description: 'Validation failed' },
           401: { description: 'Invalid credentials' }
+        }
+      }
+    },
+    '/api/v1/stats/dashboard': {
+      get: {
+        tags: ['Stats'],
+        summary: 'Fetch dashboard stats for the authenticated user role',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Dashboard stats fetched successfully',
+            content: {
+              'application/json': {
+                schema: successEnvelope({
+                  oneOf: [
+                    { $ref: '#/components/schemas/AdminDashboardStats' },
+                    { $ref: '#/components/schemas/VenueAdminDashboardStats' },
+                    { $ref: '#/components/schemas/StaffDashboardStats' }
+                  ]
+                })
+              }
+            }
+          },
+          401: { description: 'Authentication token is required or invalid' },
+          403: { description: 'You do not have permission to view dashboard stats' }
         }
       }
     },
