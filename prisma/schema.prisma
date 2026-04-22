@@ -8,21 +8,25 @@ datasource db {
 }
 
 model User {
-  id                    String           @id @default(uuid())
-  name                  String
-  email                 String           @unique
-  password              String
-  stripeAccountId       String?          @map("stripe_account_id")
-  role                  Role
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  createdVenues         Venue[]          @relation("VenueCreatedBy")
-  staffVenueAssignments StaffVenue[]     @relation("StaffVenueStaff")
-  assignedStaffVenues   StaffVenue[]     @relation("StaffVenueAssignedBy")
-  venueAdminAssignments VenueAdmin[]     @relation("VenueAdminAdmin")
-  assignedVenueAdmins   VenueAdmin[]     @relation("VenueAdminAssignedBy")
-  tipsReceived          TipTransaction[] @relation("TipTransactionStaff")
-  reviewsReceived       StaffReview[]    @relation("StaffReviewStaff")
+  id                      String           @id @default(uuid())
+  name                    String
+  email                   String           @unique
+  password                String
+  stripeAccountId         String?          @map("stripe_account_id")
+  profileImageKey         String?          @map("profile_image_key")
+  profileImageContentType String?          @map("profile_image_content_type")
+  profileImageSizeBytes   Int?             @map("profile_image_size_bytes")
+  profileImageUpdatedAt   DateTime?        @map("profile_image_updated_at")
+  role                    Role
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  createdVenues           Venue[]          @relation("VenueCreatedBy")
+  staffVenueAssignments   StaffVenue[]     @relation("StaffVenueStaff")
+  assignedStaffVenues     StaffVenue[]     @relation("StaffVenueAssignedBy")
+  venueAdminAssignments   VenueAdmin[]     @relation("VenueAdminAdmin")
+  assignedVenueAdmins     VenueAdmin[]     @relation("VenueAdminAssignedBy")
+  tipsReceived            TipTransaction[] @relation("TipTransactionStaff")
+  reviewsReceived         StaffReview[]    @relation("StaffReviewStaff")
 
   @@index([role])
   @@map("users")

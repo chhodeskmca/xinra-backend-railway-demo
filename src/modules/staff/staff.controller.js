@@ -4,7 +4,7 @@ const { successResponse } = require('../../shared/utils/response');
 
 async function createStaff(req, res, next) {
   try {
-    const staff = await staffService.createStaff(req.body, req.user);
+    const staff = await staffService.createStaff(req.body, req.user, req.file);
 
     return successResponse(res, staff, 'Staff created successfully', HTTP_STATUS.CREATED);
   } catch (error) {
@@ -34,7 +34,7 @@ async function getStaffById(req, res, next) {
 
 async function updateStaff(req, res, next) {
   try {
-    const staff = await staffService.updateStaff(req.params.staffId, req.body, req.user);
+    const staff = await staffService.updateStaff(req.params.staffId, req.body, req.user, req.file);
 
     return successResponse(res, staff, 'Staff updated successfully', HTTP_STATUS.OK);
   } catch (error) {

@@ -33,9 +33,13 @@ function getNumberEnv(name, defaultValue) {
 const env = {
   nodeEnv: getOptionalEnv('NODE_ENV', 'development'),
   port: getNumberEnv('PORT', 3000),
-  jwtExpiresIn: getOptionalEnv('JWT_EXPIRES_IN', '1h'),
+  jwtExpiresIn: getOptionalEnv('JWT_EXPIRES_IN', '7d'),
   bcryptSaltRounds: getNumberEnv('BCRYPT_SALT_ROUNDS', 12),
   frontendBaseUrl: getOptionalEnv('FRONTEND_BASE_URL', ''),
+  awsRegion: getOptionalEnv('AWS_REGION', 'ap-southeast-2'),
+  s3StaffImageBucket: getOptionalEnv('S3_STAFF_IMAGE_BUCKET', ''),
+  s3ReadUrlExpiresSeconds: getNumberEnv('S3_READ_URL_EXPIRES_SECONDS', 600),
+  staffImageMaxBytes: getNumberEnv('STAFF_IMAGE_MAX_BYTES', 2 * 1024 * 1024),
   corsOrigin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
     : undefined

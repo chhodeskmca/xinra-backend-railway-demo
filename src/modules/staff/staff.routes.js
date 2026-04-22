@@ -3,6 +3,7 @@ const staffController = require('./staff.controller');
 const { ROLES } = require('../../shared/constants/roles');
 const { authenticate } = require('../../shared/middleware/auth.middleware');
 const { authorize } = require('../../shared/middleware/role.middleware');
+const { uploadStaffProfileImage } = require('../../shared/middleware/upload.middleware');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post(
   '/',
   authenticate,
   authorize([ROLES.ADMIN, ROLES.VENUE_ADMIN]),
+  uploadStaffProfileImage,
   staffController.createStaff
 );
 
@@ -31,6 +33,7 @@ router.patch(
   '/:staffId',
   authenticate,
   authorize([ROLES.ADMIN, ROLES.VENUE_ADMIN]),
+  uploadStaffProfileImage,
   staffController.updateStaff
 );
 
