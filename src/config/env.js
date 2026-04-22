@@ -1,5 +1,9 @@
 require('dotenv').config({ quiet: true });
 
+function normalizeOrigin(origin) {
+  return origin.trim().replace(/\/+$/, '');
+}
+
 function getRequiredEnv(name) {
   const value = process.env[name];
 
@@ -41,7 +45,7 @@ const env = {
   s3ReadUrlExpiresSeconds: getNumberEnv('S3_READ_URL_EXPIRES_SECONDS', 600),
   staffImageMaxBytes: getNumberEnv('STAFF_IMAGE_MAX_BYTES', 2 * 1024 * 1024),
   corsOrigin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+    ? process.env.CORS_ORIGIN.split(',').map(normalizeOrigin).filter(Boolean)
     : undefined
 };
 
