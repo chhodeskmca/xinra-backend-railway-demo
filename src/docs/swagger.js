@@ -35,6 +35,10 @@ const STAFF_IMAGE_MAX_SIZE_LABEL = formatBytesForDocs(env.staffImageMaxBytes);
 const STAFF_IMAGE_ALLOWED_TYPES_LABEL = 'image/jpeg, image/png';
 const STAFF_IMAGE_VALIDATION_DESCRIPTION = `Optional staff profile image. Use the multipart field name "profile_image". Allowed MIME types: ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}. Max size: ${STAFF_IMAGE_MAX_SIZE_LABEL}. The backend also validates the JPEG/PNG file signature against the uploaded bytes.`;
 const STAFF_MULTIPART_VENUE_IDS_DESCRIPTION = 'For multipart/form-data, send venue_ids as repeated "venue_ids" fields. The backend also accepts repeated "venue_ids[]" fields, a JSON array string, or a comma-separated string for compatibility.';
+const STAFF_CREATE_VENUE_IDS_DESCRIPTION = 'Optional. When provided, the staff member is assigned to these accessible venue UUIDs during creation. If omitted, the staff member is created without venue assignments. Assign venues later with POST /api/v1/staff/{staffId}/venues.';
+const STAFF_CREATE_MULTIPART_VENUE_IDS_DESCRIPTION = `Optional. ${STAFF_MULTIPART_VENUE_IDS_DESCRIPTION} When provided, the staff member is assigned to those accessible venues during creation. If omitted, the staff member is created without venue assignments. Assign venues later with POST /api/v1/staff/{staffId}/venues.`;
+const STAFF_UPDATE_VENUE_IDS_DESCRIPTION = 'Optional. Sending venue_ids replaces the full venue assignment list for the staff member. Omit this field to keep the current assignments unchanged.';
+const STAFF_UPDATE_MULTIPART_VENUE_IDS_DESCRIPTION = `Optional. ${STAFF_MULTIPART_VENUE_IDS_DESCRIPTION} Sending venue_ids replaces the full venue assignment list. Omit this field to keep the current assignments unchanged.`;
 const STAFF_IMAGE_RESPONSE_DESCRIPTION = 'Null when no image is stored. When present, the url is a temporary AWS S3 pre-signed GET URL. Refetch the staff record after expiry to receive a fresh url.';
 
 const openApiDocument = {
@@ -434,8 +438,14 @@ const openApiDocument = {
       },
       CreateStaffRequest: {
         type: 'object',
-        description: 'JSON request body for creating a staff member when no profile image upload is needed.',
-        required: ['name', 'email', 'password', 'venue_ids'],
+        description: 'JSON request body for creating a staff member when no profile image upload is needed. venue_ids is optional for standalone staff creation.',
+        required: ['name', 'email', 'password'],
+        example: {
+          name: 'Staff User',
+          email: 'staff@example.com',
+          password: 'ChangeMe123!',
+          stripe_account_id: 'acct_1ExampleStaffStripe'
+        },
         properties: {
           name: { type: 'string', example: 'Staff User' },
           email: { type: 'string', format: 'email', example: 'staff@example.com' },
@@ -445,21 +455,20 @@ const openApiDocument = {
             type: 'array',
             minItems: 1,
             items: { type: 'string', format: 'uuid' },
-            description: 'At least one accessible venue UUID must be assigned to the staff member.',
+            description: STAFF_CREATE_VENUE_IDS_DESCRIPTION,
             example: ['82b60c1f-1e61-4389-bd7f-7e4fc604adbf']
           }
         }
       },
       CreateStaffMultipartRequest: {
         type: 'object',
-        description: 'Multipart request body for creating a staff member with or without profile_image upload.',
-        required: ['name', 'email', 'password', 'venue_ids'],
+        description: 'Multipart request body for creating a staff member with or without profile_image upload. venue_ids is optional for standalone staff creation.',
+        required: ['name', 'email', 'password'],
         example: {
           name: 'Staff User',
           email: 'staff@example.com',
           password: 'ChangeMe123!',
           stripe_account_id: 'acct_1ExampleStaffStripe',
-          venue_ids: ['82b60c1f-1e61-4389-bd7f-7e4fc604adbf'],
           profile_image: '(optional binary file)'
         },
         properties: {
@@ -471,7 +480,7 @@ const openApiDocument = {
             type: 'array',
             minItems: 1,
             items: { type: 'string', format: 'uuid' },
-            description: STAFF_MULTIPART_VENUE_IDS_DESCRIPTION,
+            description: STAFF_CREATE_MULTIPART_VENUE_IDS_DESCRIPTION,
             example: ['82b60c1f-1e61-4389-bd7f-7e4fc604adbf']
           },
           profile_image: {
@@ -493,7 +502,7 @@ const openApiDocument = {
             type: 'array',
             minItems: 1,
             items: { type: 'string', format: 'uuid' },
-            description: 'Replaces the full venue assignment list for the staff member.',
+            description: STAFF_UPDATE_VENUE_IDS_DESCRIPTION,
             example: ['82b60c1f-1e61-4389-bd7f-7e4fc604adbf']
           }
         }
@@ -516,7 +525,7 @@ const openApiDocument = {
             type: 'array',
             minItems: 1,
             items: { type: 'string', format: 'uuid' },
-            description: `${STAFF_MULTIPART_VENUE_IDS_DESCRIPTION} Sending venue_ids replaces the full venue assignment list.`,
+            description: STAFF_UPDATE_MULTIPART_VENUE_IDS_DESCRIPTION,
             example: ['82b60c1f-1e61-4389-bd7f-7e4fc604adbf']
           },
           profile_image: {
@@ -958,11 +967,11 @@ const openApiDocument = {
       post: {
         tags: ['Staff'],
         summary: 'Create staff',
-        description: 'Creates a STAFF user and assigns the staff member to one or more accessible venues.\n\nUse application/json when no image upload is needed. Use multipart/form-data when uploading profile_image. In multipart requests, send the file in the "profile_image" field and send venue_ids as repeated "venue_ids" fields. The backend also accepts repeated "venue_ids[]" fields, a JSON array string, or a comma-separated string for compatibility.\n\nIf profile_image is uploaded, the response includes private-image metadata plus a temporary AWS S3 pre-signed GET URL.',
+        description: 'Creates a STAFF user. venue_ids is optional: if provided, the backend assigns the staff member to those accessible venues during creation; if omitted, the staff member is created without venue assignments and can be assigned later with POST /api/v1/staff/{staffId}/venues.\n\nUse application/json when no image upload is needed. Use multipart/form-data when uploading profile_image. In multipart requests, send the file in the "profile_image" field and send venue_ids as repeated "venue_ids" fields. The backend also accepts repeated "venue_ids[]" fields, a JSON array string, or a comma-separated string for compatibility.\n\nIf profile_image is uploaded, the response includes private-image metadata plus a temporary AWS S3 pre-signed GET URL.',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
-          description: `Send JSON for staff creation without an image, or multipart/form-data with profile_image for image upload. Only one file is allowed. Profile images must be ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, ${STAFF_IMAGE_MAX_SIZE_LABEL} or smaller, and their file signature must match the declared type.`,
+          description: `Send JSON for staff creation without an image, or multipart/form-data with profile_image for image upload. venue_ids is optional. Only one file is allowed. Profile images must be ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, ${STAFF_IMAGE_MAX_SIZE_LABEL} or smaller, and their file signature must match the declared type.`,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/CreateStaffRequest' }
@@ -990,7 +999,7 @@ const openApiDocument = {
               }
             }
           },
-          400: { description: `Validation failed, invalid venue_ids, or invalid profile image upload. Only one profile_image file is allowed. Accepted image types are ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, max ${STAFF_IMAGE_MAX_SIZE_LABEL}, and the uploaded bytes must match the declared image type.` },
+          400: { description: `Validation failed, invalid venue_ids when provided, or invalid profile image upload. Only one profile_image file is allowed. Accepted image types are ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, max ${STAFF_IMAGE_MAX_SIZE_LABEL}, and the uploaded bytes must match the declared image type.` },
           401: { description: 'Authentication token is required or invalid' },
           403: { description: 'Only ADMIN or VENUE_ADMIN can create staff' },
           409: { description: 'Email is already in use' }
@@ -1027,7 +1036,7 @@ const openApiDocument = {
       patch: {
         tags: ['Staff'],
         summary: 'Update staff',
-        description: 'Updates any subset of mutable staff fields: name, email, password, stripe_account_id, venue_ids, and/or profile_image.\n\nUse application/json when no image upload is needed. Use multipart/form-data when replacing profile_image. At least one mutable field or profile_image must be provided. Omitting profile_image keeps the current image. Sending venue_ids replaces the full venue assignment list.\n\nIf a new image is uploaded, the backend validates MIME type, size, and JPEG/PNG file signature before upload, then deletes the previous S3 object after the update succeeds.',
+        description: 'Updates any subset of mutable staff fields: name, email, password, stripe_account_id, venue_ids, and/or profile_image.\n\nUse application/json when no image upload is needed. Use multipart/form-data when replacing profile_image. At least one mutable field or profile_image must be provided. Omitting profile_image keeps the current image. venue_ids is optional; when sent, it replaces the full venue assignment list, and when omitted, current assignments stay unchanged.\n\nIf a new image is uploaded, the backend validates MIME type, size, and JPEG/PNG file signature before upload, then deletes the previous S3 object after the update succeeds.',
         security: [{ bearerAuth: [] }],
         parameters: [
           {
@@ -1039,7 +1048,7 @@ const openApiDocument = {
         ],
         requestBody: {
           required: true,
-          description: `Send JSON for staff field updates without an image, or multipart/form-data with profile_image to replace the staff profile image. Only one file is allowed. Profile images must be ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, ${STAFF_IMAGE_MAX_SIZE_LABEL} or smaller, and their file signature must match the declared type.`,
+          description: `Send JSON for staff field updates without an image, or multipart/form-data with profile_image to replace the staff profile image. venue_ids is optional. Only one file is allowed. Profile images must be ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, ${STAFF_IMAGE_MAX_SIZE_LABEL} or smaller, and their file signature must match the declared type.`,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/UpdateStaffRequest' }
@@ -1067,7 +1076,7 @@ const openApiDocument = {
               }
             }
           },
-          400: { description: `Validation failed, invalid venue_ids, or invalid profile image upload. Only one profile_image file is allowed. Accepted image types are ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, max ${STAFF_IMAGE_MAX_SIZE_LABEL}, and the uploaded bytes must match the declared image type.` },
+          400: { description: `Validation failed, invalid venue_ids when provided, or invalid profile image upload. Only one profile_image file is allowed. Accepted image types are ${STAFF_IMAGE_ALLOWED_TYPES_LABEL}, max ${STAFF_IMAGE_MAX_SIZE_LABEL}, and the uploaded bytes must match the declared image type.` },
           401: { description: 'Authentication token is required or invalid' },
           403: { description: 'Staff cannot be modified with the current access scope' },
           404: { description: 'Staff user not found' },
@@ -1106,6 +1115,7 @@ const openApiDocument = {
       post: {
         tags: ['Staff'],
         summary: 'Assign venues to existing staff',
+        description: 'Assigns one or more accessible venues to an existing staff member without removing current assignments. Use this after standalone staff creation when venue_ids was omitted from POST /api/v1/staff, or whenever you want to add venue access later.',
         security: [{ bearerAuth: [] }],
         parameters: [
           {
@@ -1205,74 +1215,74 @@ const openApiDocument = {
         }
       }
     },
-    '/api/v1/users/staff': {
-      post: {
-        tags: ['Users'],
-        summary: 'Create staff and assign venues (compatibility route)',
-        description: 'Legacy compatibility route. This endpoint accepts application/json only and does not support multipart/form-data or profile_image uploads. Use POST /api/v1/staff for staff image upload support.',
-        security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          description: 'JSON-only compatibility request. No profile_image field is supported on this route.',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/CreateStaffRequest' }
-            }
-          }
-        },
-        responses: {
-          201: {
-            description: 'Staff created successfully',
-            content: {
-              'application/json': {
-                schema: successEnvelope({ $ref: '#/components/schemas/Staff' })
-              }
-            }
-          },
-          400: { description: 'Validation failed or invalid venue ids' },
-          401: { description: 'Authentication token is required or invalid' },
-          403: { description: 'Only ADMIN or VENUE_ADMIN can create staff' },
-          409: { description: 'Email is already in use' }
-        }
-      }
-    },
-    '/api/v1/users/staff/{staffId}/venues': {
-      post: {
-        tags: ['Users'],
-        summary: 'Assign venues to existing staff (compatibility route)',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            in: 'path',
-            name: 'staffId',
-            required: true,
-            schema: { type: 'string', format: 'uuid' }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/AssignStaffVenuesRequest' }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: 'Staff venues assigned successfully',
-            content: {
-              'application/json': {
-                schema: successEnvelope({ $ref: '#/components/schemas/Staff' })
-              }
-            }
-          },
-          400: { description: 'Validation failed or invalid venue ids' },
-          401: { description: 'Authentication token is required or invalid' },
-          403: { description: 'One or more venue_ids are not accessible' },
-          404: { description: 'Staff user not found' }
-        }
-      }
-    }
+    // '/api/v1/users/staff': {
+    //   post: {
+    //     tags: ['Users'],
+    //     summary: 'Create staff and assign venues (compatibility route)',
+    //     description: 'Legacy compatibility route. This endpoint accepts application/json only and does not support multipart/form-data or profile_image uploads. Use POST /api/v1/staff for staff image upload support.',
+    //     security: [{ bearerAuth: [] }],
+    //     requestBody: {
+    //       required: true,
+    //       description: 'JSON-only compatibility request. No profile_image field is supported on this route.',
+    //       content: {
+    //         'application/json': {
+    //           schema: { $ref: '#/components/schemas/CreateStaffRequest' }
+    //         }
+    //       }
+    //     },
+    //     responses: {
+    //       201: {
+    //         description: 'Staff created successfully',
+    //         content: {
+    //           'application/json': {
+    //             schema: successEnvelope({ $ref: '#/components/schemas/Staff' })
+    //           }
+    //         }
+    //       },
+    //       400: { description: 'Validation failed or invalid venue ids' },
+    //       401: { description: 'Authentication token is required or invalid' },
+    //       403: { description: 'Only ADMIN or VENUE_ADMIN can create staff' },
+    //       409: { description: 'Email is already in use' }
+    //     }
+    //   }
+    // },
+    // '/api/v1/users/staff/{staffId}/venues': {
+    //   post: {
+    //     tags: ['Users'],
+    //     summary: 'Assign venues to existing staff (compatibility route)',
+    //     security: [{ bearerAuth: [] }],
+    //     parameters: [
+    //       {
+    //         in: 'path',
+    //         name: 'staffId',
+    //         required: true,
+    //         schema: { type: 'string', format: 'uuid' }
+    //       }
+    //     ],
+    //     requestBody: {
+    //       required: true,
+    //       content: {
+    //         'application/json': {
+    //           schema: { $ref: '#/components/schemas/AssignStaffVenuesRequest' }
+    //         }
+    //       }
+    //     },
+    //     responses: {
+    //       200: {
+    //         description: 'Staff venues assigned successfully',
+    //         content: {
+    //           'application/json': {
+    //             schema: successEnvelope({ $ref: '#/components/schemas/Staff' })
+    //           }
+    //         }
+    //       },
+    //       400: { description: 'Validation failed or invalid venue ids' },
+    //       401: { description: 'Authentication token is required or invalid' },
+    //       403: { description: 'One or more venue_ids are not accessible' },
+    //       404: { description: 'Staff user not found' }
+    //     }
+    //   }
+    // }
   }
 };
 

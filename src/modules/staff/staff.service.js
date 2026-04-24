@@ -97,7 +97,7 @@ const userCreateSchema = z.object({
 
 const createStaffSchema = userCreateSchema.extend({
   stripe_account_id: optionalString(255),
-  venue_ids: venueIdsSchema
+  venue_ids: venueIdsSchema.optional()
 });
 
 const updateStaffSchema = z.object({
@@ -407,6 +407,22 @@ async function getStaffRecordByIdOrFail(tx, staffId, actor) {
   return staff;
 }
 
+async function getStaffRecordForCreateResponseOrFail(tx, staffId, actor) {
+  const staff = await tx.user.findFirst({
+    where: {
+      id: staffId,
+      role: ROLES.STAFF
+    },
+    select: getStaffSelect(actor)
+  });
+
+  if (!staff) {
+    throw new AppError('Staff user not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  return staff;
+}
+
 async function getSerializedStaffById(tx, staffId, actor) {
   const staff = await getStaffRecordByIdOrFail(tx, staffId, actor);
 
@@ -441,9 +457,13 @@ function normalizeStaffListFilters(query) {
 async function createStaff(payload, actor, profileImageFile = null) {
   const normalizedPayload = normalizeStaffPayload(payload);
   const input = validateSchema(createStaffSchema, normalizedPayload);
+  const venueIds = input.venue_ids ?? [];
   validateStaffProfileImageFile(profileImageFile);
   await ensureEmailIsAvailable(input.email);
-  await findAccessibleVenues(prisma, input.venue_ids, actor);
+
+  if (venueIds.length) {
+    await findAccessibleVenues(prisma, venueIds, actor);
+  }
 
   const hashedPassword = await hashPassword(input.password);
   const staffId = randomUUID();
@@ -471,16 +491,18 @@ async function createStaff(payload, actor, profileImageFile = null) {
         }
       });
 
-      await tx.staffVenue.createMany({
-        data: input.venue_ids.map((venueId) => ({
-          staffId,
-          venueId,
-          assignedById: actor.id
-        })),
-        skipDuplicates: true
-      });
+      if (venueIds.length) {
+        await tx.staffVenue.createMany({
+          data: venueIds.map((venueId) => ({
+            staffId,
+            venueId,
+            assignedById: actor.id
+          })),
+          skipDuplicates: true
+        });
+      }
 
-      return getStaffRecordByIdOrFail(tx, staffId, actor);
+      return getStaffRecordForCreateResponseOrFail(tx, staffId, actor);
     });
 
     return serializeStaff(staff);
