@@ -143,7 +143,7 @@ const openApiDocument = {
           stripe_account_id: { type: 'string', nullable: true, example: 'acct_123456789' },
           australian_business_number: { type: 'string', nullable: true, example: '51824753556' },
           qr_token: { type: 'string', example: '4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
-          qr_scan_url: { type: 'string', example: 'https://app.example.com/venue/scan/4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
+          qr_scan_url: { type: 'string', example: 'https://app.example.com/4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
           created_by_id: { type: 'string', format: 'uuid' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' }
@@ -200,7 +200,7 @@ const openApiDocument = {
           email: { type: 'string', format: 'email', nullable: true, example: 'venue.a@example.com' },
           telephone_number: { type: 'string', nullable: true, example: '+61 3 9000 0000' },
           qr_token: { type: 'string', example: '4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
-          qr_scan_url: { type: 'string', example: 'https://app.example.com/venue/scan/4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
+          qr_scan_url: { type: 'string', example: 'https://app.example.com/4d5bb66f9bb44af5d6dbf2937f389fbf05cd6a2f246f8c36bb8b3c2b8c4df83f' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
           staff: {
